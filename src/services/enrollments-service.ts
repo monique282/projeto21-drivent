@@ -3,16 +3,49 @@ import { request } from '@/utils/request';
 import { notFoundError } from '@/errors';
 import { addressRepository, CreateAddressParams, enrollmentRepository, CreateEnrollmentParams } from '@/repositories';
 import { exclude } from '@/utils/prisma-utils';
+import { cepRequestError } from '@/errors/errors-cep';
+
+// informacoes do cep
+interface Info {
+  cep: string;
+  logradouro: string;
+  complemento: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  ibge: string;
+  gia: string;
+  ddd: string;
+  siafi: string;
+  erro: boolean;
+}
 
 // TODO - Receber o CEP por parâmetro nesta função.
-async function getAddressFromCEP() {
-  // FIXME: está com CEP fixo!
-  const result = await request.get(`${process.env.VIA_CEP_API}/37440000/json/`);
+async function getAddressFromCEP(cep: string) {
 
-  // TODO: Tratar regras de negócio e lanças eventuais erros
+  // verificar se o cep que veio é valido
+  if (!cep || cep === '') {
+    throw cepRequestError();
+  };
+
+  const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Info;;
+
+  // verificar se resulte veio
+  if (result.erro) {
+    throw cepRequestError();
+  };
+
+  // filtrar o resultado que vem 
+  const filteredResult = {
+    logradouro: result.logradouro,
+    complemento: result.complemento,
+    bairro: result.bairro,
+    cidade: result.localidade,
+    uf: result.uf,
+  };
 
   // FIXME: não estamos interessados em todos os campos
-  return result.data;
+  return filteredResult;
 }
 
 async function getOneWithAddressByUserId(userId: number): Promise<GetOneWithAddressByUserIdResult> {
@@ -45,7 +78,17 @@ async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollm
   const address = getAddressForUpsert(params.address);
 
   // TODO - Verificar se o CEP é válido antes de associar ao enrollment.
+  if (!params.address.cep || params.address.cep === '') {
+    throw cepRequestError();
+  };
 
+  const result = (await request.get(`${process.env.VIA_CEP_API}/${params.address.cep}/json/`)).data as Info;
+  
+  // verificar se ta tudo certo
+  if (result.erro) {
+    throw cepRequestError();
+  };
+  
   const newEnrollment = await enrollmentRepository.upsert(params.userId, enrollment, exclude(enrollment, 'userId'));
 
   await addressRepository.upsert(newEnrollment.id, address, address);
