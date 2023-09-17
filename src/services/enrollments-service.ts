@@ -5,7 +5,9 @@ import { addressRepository, CreateAddressParams, enrollmentRepository, CreateEnr
 import { exclude } from '@/utils/prisma-utils';
 import { badCepRequestError } from '@/errors/bad-request-error';
 
-interface Adress {
+
+// informações sobre o cep
+interface Info {
   cep: string;
   logradouro: string;
   complemento: string;
@@ -19,14 +21,17 @@ interface Adress {
   erro: boolean;
 }
 
+// função que pega os dados referente ao endereço
 async function getAddressFromCEP(cep: string) {
+
+  // verificando se o cep é valido
   if (!cep || cep === '') {
     throw badCepRequestError();
   }
 
-  const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Adress;
+  const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Info;
 
-  const FilteredAdress = {
+  const filteredAdressGet = {
     logradouro: result.logradouro,
     complemento: result.complemento,
     bairro: result.bairro,
@@ -34,12 +39,14 @@ async function getAddressFromCEP(cep: string) {
     uf: result.uf,
   };
 
+  //  verificando se o resultado é valido
   if (result.erro) {
     throw badCepRequestError();
   }
 
-  return FilteredAdress;
+  return filteredAdressGet;
 }
+
 async function getOneWithAddressByUserId(userId: number): Promise<GetOneWithAddressByUserIdResult> {
   const enrollmentWithAddress = await enrollmentRepository.findWithAddressByUserId(userId);
 
@@ -69,11 +76,11 @@ async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollm
   enrollment.birthday = new Date(enrollment.birthday);
   const address = getAddressForUpsert(params.address);
 
-  // TODO - Verificars.cep || params.address.cep === '') {
+  // verificando se o cep é valido
   if (!params.address.cep || params.address.cep === '') {
     throw badCepRequestError();
   }
-  const result = (await request.get(`${process.env.VIA_CEP_API}/${params.address.cep}/json/`)).data as Adress;
+  const result = (await request.get(`${process.env.VIA_CEP_API}/${params.address.cep}/json/`)).data as Info;
   if (result.erro) {
     throw badCepRequestError();
   }
