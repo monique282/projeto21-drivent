@@ -38,8 +38,8 @@ async function getAddressFromCEP(cep: string) {
     uf: result.uf,
   };
 
-   // verificar se resulte veio
-   if (result.erro) {
+  // verificar se resulte veio
+  if (result.erro) {
     throw cepRequestError();
   }
 
