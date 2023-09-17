@@ -22,20 +22,19 @@ interface Info {
 
 // TODO - Receber o CEP por parâmetro nesta função.
 async function getAddressFromCEP(cep: string) {
-
   // verificar se o cep que veio é valido
   if (!cep || cep === '') {
     throw cepRequestError();
-  };
+  }
 
-  const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Info;;
+  const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Info;
 
   // verificar se resulte veio
   if (result.erro) {
     throw cepRequestError();
-  };
+  }
 
-  // filtrar o resultado que vem 
+  // filtrar o resultado que vem
   const filteredResult = {
     logradouro: result.logradouro,
     complemento: result.complemento,
@@ -80,15 +79,15 @@ async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollm
   // TODO - Verificar se o CEP é válido antes de associar ao enrollment.
   if (!params.address.cep || params.address.cep === '') {
     throw cepRequestError();
-  };
+  }
 
   const result = (await request.get(`${process.env.VIA_CEP_API}/${params.address.cep}/json/`)).data as Info;
-  
+
   // verificar se ta tudo certo
   if (result.erro) {
     throw cepRequestError();
-  };
-  
+  }
+
   const newEnrollment = await enrollmentRepository.upsert(params.userId, enrollment, exclude(enrollment, 'userId'));
 
   await addressRepository.upsert(newEnrollment.id, address, address);

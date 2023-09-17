@@ -50,9 +50,8 @@ export function handleApplicationErrors(
     });
   }
 
-
   if (err.hasOwnProperty('status') && (err.name === 'RequestError' || err.name === 'BadRequestError')) {
-    return res.status((err as RequestError).status).send({
+    return res.status(httpStatus.NOT_FOUND).send({
       message: err.message,
     });
   }
