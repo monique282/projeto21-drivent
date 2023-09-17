@@ -29,11 +29,6 @@ async function getAddressFromCEP(cep: string) {
 
   const result = (await request.get(`${process.env.VIA_CEP_API}/${cep}/json/`)).data as Info;
 
-  // verificar se resulte veio
-  if (result.erro) {
-    throw cepRequestError();
-  }
-
   // filtrar o resultado que vem
   const filteredResult = {
     logradouro: result.logradouro,
@@ -42,6 +37,11 @@ async function getAddressFromCEP(cep: string) {
     cidade: result.localidade,
     uf: result.uf,
   };
+
+   // verificar se resulte veio
+   if (result.erro) {
+    throw cepRequestError();
+  }
 
   // FIXME: não estamos interessados em todos os campos
   return filteredResult;
