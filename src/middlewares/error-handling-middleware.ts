@@ -50,7 +50,8 @@ export function handleApplicationErrors(
     });
   }
 
-  if (err.hasOwnProperty('status') && err.name === 'RequestError') {
+
+  if (err.hasOwnProperty('status') && (err.name === 'RequestError' || err.name === 'BadRequestError')) {
     return res.status((err as RequestError).status).send({
       message: err.message,
     });
